@@ -79,13 +79,12 @@ div.stButton > button:active {
 # ==========================================================
 # LOAD MODELS
 # ==========================================================
-risk_model = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\risk_model.pkl")
-severity_model = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\severity_model.pkl")
-outage_model = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\outage_model.pkl")
-
-scaler = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\scaler.pkl")
-severity_encoder = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\severity_encoder.pkl")
-outage_encoder = joblib.load(r"C:\Users\426250\Desktop\LloydRegister_SystemOutage\Codes\Island_Gas_AI_App\outage_encoder.pkl")
+risk_model = joblib.load("risk_model.pkl")
+severity_model = joblib.load("severity_model.pkl")
+outage_model = joblib.load("outage_model.pkl")
+scaler = joblib.load("scaler.pkl")
+severity_encoder = joblib.load("severity_encoder.pkl")
+outage_encoder = joblib.load("outage_encoder.pkl")
 
 # ==========================================================
 # HEADER SECTION
