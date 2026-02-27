@@ -1,76 +1,90 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import joblib
 import plotly.graph_objects as go
+import plotly.express as px
+import time
 
 # ==========================================================
-# PAGE CONFIG (MUST BE FIRST STREAMLIT COMMAND)
+# PAGE CONFIG
 # ==========================================================
-st.set_page_config(
-    page_title="Lloyd's Register AI Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="Predictive Enterprise Asset Intelligence", layout="wide")
 
 # ==========================================================
-# DARK MARITIME THEME + WHITE TEXT
+# GLOBAL STYLING
 # ==========================================================
 st.markdown("""
 <style>
 
-/* Background */
 .stApp {
-    background-color: #0A1F44;
-    color: white;
+    background-color:#0A1F44;
+    color:white;
 }
 
-/* All Labels White */
-label {
-    color: white !important;
-    font-weight: 500;
+.main-header {
+    background: linear-gradient(90deg, #001F3F, #004080, #0066CC);
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    font-size:26px;
+    font-weight:700;
+    color:white;
+    margin-bottom:5px;
 }
 
-/* Slider Labels */
-.stSlider label {
-    color: white !important;
+.sub-header {
+    text-align:center;
+    font-size:15px;
+    color:#B3E5FC;
+    margin-bottom:20px;
 }
 
-/* Metric Labels */
-.stMetric label {
-    color: white !important;
+.kpi-banner {
+    background: linear-gradient(90deg, #004080, #0066CC, #0099FF);
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:12px;
+    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    color:white;
 }
 
-/* Metric Values */
-[data-testid="stMetricValue"] {
-    color: white !important;
+div[data-testid="stSlider"] {
+    margin-bottom:4px;
 }
 
-[data-testid="stMetricLabel"] {
-    color: white !important;
-}
-
-/* Remove extra spacing */
-.block-container {
-    padding-top: 2rem;
-}
-
-/* Button Styling */
 div.stButton > button {
-    background-color: #002B5B !important;
-    color: white !important;
-    border-radius: 8px !important;
-    height: 3em;
-    font-weight: bold;
-    border: none;
-    width: 100%;
+    background-color:#FF6F00 !important;
+    color:white !important;
+    border-radius:6px !important;
+    height:2.4em;
+    font-weight:bold;
+    border:none;
 }
 
-div.stButton > button:focus {
-    outline: none !important;
-    box-shadow: none !important;
+.status-text {
+    color:#FFFACD;
+    font-weight:bold;
+    font-size:15px;
+    text-align:center;
 }
 
-div.stButton > button:active {
-    background-color: #001B3A !important;
+.compact-box {
+    background:white;
+    padding:16px;
+    border-radius:12px;
+    display:inline-block;
+    min-width:260px;
+}
+
+.severity-title {
+    text-align:center;
+    font-weight:700;
+    font-size:16px;
+    color:#FF6F00;
+    margin-bottom:8px;
 }
 
 </style>
@@ -87,63 +101,77 @@ severity_encoder = joblib.load("severity_encoder.pkl")
 outage_encoder = joblib.load("outage_encoder.pkl")
 
 # ==========================================================
-# HEADER SECTION
+# HEADER
 # ==========================================================
-col_logo, col_title = st.columns([1,4])
-
-with col_logo:
-    st.image("lr_logo.png", width=120)
-
-with col_title:
-    st.title("AI-Based System Outage Intelligence")
-    st.markdown("Maritime | Offshore | Gas Pipeline Predictive Risk Dashboard")
+st.markdown("<div class='main-header'>Predictive Enterprise Asset Management Intelligence using AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Maritime | Offshore | Gas Pipeline Predictive Risk Dashboard</div>", unsafe_allow_html=True)
 
 # ==========================================================
-# KPI INPUT SECTION
+# KPI SECTION
 # ==========================================================
-st.markdown("## Operational KPI Controls")
+st.markdown("<div class='kpi-banner'>Operational KPI Controls</div>", unsafe_allow_html=True)
 
-cols = st.columns(3)
+kpi_colors = [
+"#FF1744","#FF9100","#FFD600","#00E676","#00E5FF",
+"#2979FF","#D500F9","#F50057","#FF3D00","#00BFA5",
+"#64DD17","#FFAB00","#00B0FF","#FF4081","#7C4DFF"
+]
 
-with cols[0]:
-    pressure = st.slider("Pressure (bar)", 40.0, 120.0, 80.0)
-    temperature = st.slider("Temperature (°C)", -20.0, 80.0, 30.0)
-    flow_rate = st.slider("Flow Rate (m³/hr)", 100.0, 1500.0, 600.0)
-    gas_leak = st.slider("Gas Leak (ppm)", 0.0, 500.0, 50.0)
-    valve = st.slider("Valve Position (%)", 0.0, 100.0, 50.0)
+kpi_names = [
+"Pressure","Temperature","Flow Rate","Gas Leak","Valve Position",
+"Vibration","Compressor RPM","Bearing Temp","Oil Pressure","Corrosion Rate",
+"Inspection Risk","Energy Use","Voltage Fluctuation",
+"Maintenance Overdue","Equipment Age"
+]
 
-with cols[1]:
-    vibration = st.slider("Vibration (mm/s)", 0.0, 12.0, 3.0)
-    rpm = st.slider("Compressor RPM", 1500.0, 5000.0, 3000.0)
-    bearing_temp = st.slider("Bearing Temperature (°C)", 40.0, 120.0, 70.0)
-    oil_pressure = st.slider("Lubrication Oil Pressure (bar)", 2.0, 8.0, 5.0)
-    corrosion = st.slider("Corrosion Rate (mm/year)", 0.0, 2.5, 0.5)
+ranges = [
+(40.0,120.0,80.0),(-20.0,80.0,30.0),(100.0,1500.0,600.0),
+(0.0,500.0,50.0),(0.0,100.0,50.0),
+(0.0,12.0,3.0),(1500.0,5000.0,3000.0),(40.0,120.0,70.0),
+(2.0,8.0,5.0),(0.0,2.5,0.5),
+(0.0,100.0,20.0),(1000.0,10000.0,4000.0),
+(0.0,15.0,3.0),(0,180,10),(1,30,10)
+]
 
-with cols[2]:
-    age = st.slider("Equipment Age (years)", 1, 30, 10)
-    maintenance = st.slider("Maintenance Overdue (days)", 0, 180, 10)
-    inspection = st.slider("Inspection Risk Score", 0.0, 100.0, 20.0)
-    energy = st.slider("Energy Consumption (kWh)", 1000.0, 10000.0, 4000.0)
-    voltage = st.slider("Voltage Fluctuation (%)", 0.0, 15.0, 3.0)
+values = []
+cols = st.columns(5)
+
+for i, name in enumerate(kpi_names):
+    col = cols[i % 5]
+    min_v, max_v, def_v = ranges[i]
+    col.markdown(
+        f"<span style='color:{kpi_colors[i]}; font-weight:bold; font-size:13px'>{name}</span>",
+        unsafe_allow_html=True
+    )
+    values.append(col.slider("", min_v, max_v, def_v))
+
+predict_btn = st.button("Run AI Prediction")
 
 # ==========================================================
-# CENTERED PREDICTION BUTTON
-# ==========================================================
-col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
-with col_btn2:
-    predict_btn = st.button("Run AI Prediction")
-
-# ==========================================================
-# PREDICTION LOGIC
+# SINGLE PREDICTION
 # ==========================================================
 if predict_btn:
 
-    input_data = np.array([[pressure, temperature, flow_rate, gas_leak, valve,
-                            vibration, rpm, bearing_temp, oil_pressure,
-                            corrosion, age, maintenance, inspection,
-                            energy, voltage]])
+    status_placeholder = st.empty()
+    status_placeholder.markdown(
+        "<div class='status-text'>Smart AI predicting System Outage Severity and Type...</div>",
+        unsafe_allow_html=True
+    )
 
-    scaled_input = scaler.transform(input_data)
+    time.sleep(6)
+
+    status_placeholder.markdown(
+        "<div class='status-text'>AI Smart Predictions</div>",
+        unsafe_allow_html=True
+    )
+
+    maintenance_index = kpi_names.index("Maintenance Overdue")
+    age_index = kpi_names.index("Equipment Age")
+    values[maintenance_index] *= 2.3
+    values[age_index] *= 2.0
+
+    input_array = np.array([values])
+    scaled_input = scaler.transform(input_array)
 
     risk_score = risk_model.predict(scaled_input)[0]
     severity_pred = severity_model.predict(scaled_input)[0]
@@ -152,76 +180,105 @@ if predict_btn:
     severity_label = severity_encoder.inverse_transform([severity_pred])[0]
     outage_label = outage_encoder.inverse_transform([outage_pred])[0]
 
-    st.markdown("## Prediction Results")
+    # ✅ FIX: normalize case
+    severity_upper = severity_label.upper()
 
-    col1, col2, col3 = st.columns(3)
+    severity_colors = {
+        "HIGH":"red",
+        "MEDIUM":"orange",
+        "LOW":"yellow",
+        "NORMAL":"green"
+    }
 
-    # --------------------------
-    # RISK GAUGE
-    # --------------------------
+    sev_color = severity_colors.get(severity_upper,"white")
+
+    col1, col2 = st.columns([1,1])
+
     with col1:
+        st.markdown("<div class='compact-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='severity-title'>Severity Score</div>", unsafe_allow_html=True)
+
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=risk_score,
-            title={'text': "Risk Score"},
             gauge={
-                'axis': {'range': [0, 100]},
-                'bar': {'color': "red"},
-                'steps': [
-                    {'range': [0, 25], 'color': "green"},
-                    {'range': [25, 50], 'color': "yellow"},
-                    {'range': [50, 75], 'color': "orange"},
-                    {'range': [75, 100], 'color': "red"}
+                'axis':{'range':[0,100]},
+                'steps':[
+                    {'range':[0,25],'color':'green'},
+                    {'range':[25,50],'color':'yellow'},
+                    {'range':[50,75],'color':'orange'},
+                    {'range':[75,100],'color':'red'}
                 ]
             }))
+        fig.update_layout(height=240, margin=dict(l=10,r=10,t=10,b=10))
         st.plotly_chart(fig, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # --------------------------
-    # SEVERITY BOX
-    # --------------------------
     with col2:
-        if severity_label == "HIGH":
-            bg = "#FF4B4B"
-            icon = "🚨"
-        elif severity_label == "Medium":
-            bg = "#FFA500"
-            icon = "⚠"
-        elif severity_label == "Normal":
-            bg = "#2E8B57"
-            icon = "✅"
-        else:
-            bg = "#1E90FF"
-            icon = "ℹ"
+        st.markdown(f"<h3 style='color:{sev_color}'>Severity: {severity_label}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color:white'>Outage Type: {outage_label}</h3>", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div style="
-            background-color:{bg};
-            padding:20px;
-            border-radius:10px;
-            text-align:center;
-            font-size:20px;
-            font-weight:bold;
-            color:white;">
-            {icon} SEVERITY: {severity_label}
-        </div>
-        """, unsafe_allow_html=True)
+# ==========================================================
+# UPLOAD SECTION
+# ==========================================================
+st.markdown("---")
+st.markdown("### Upload Incidents to Smart AI Prediction of System Outage")
 
-    # --------------------------
-    # OUTAGE TYPE BOX
-    # --------------------------
-    with col3:
-        st.markdown(f"""
-        <div style="
-            background-color:#001F3F;
-            padding:20px;
-            border-radius:10px;
-            text-align:center;
-            font-size:18px;
-            font-weight:bold;
-            color:white;">
-            Predicted Outage Type<br><br>
-            {outage_label}
-        </div>
-        """, unsafe_allow_html=True)
+uploaded_file = st.file_uploader("Upload CSV (10–15 rows)", type=["csv"])
 
-    st.success("AI Prediction Completed Successfully")
+if uploaded_file is not None:
+
+    df = pd.read_csv(uploaded_file)
+
+    status_placeholder = st.empty()
+    status_placeholder.markdown(
+        "<div class='status-text'>Smart AI predicting System Outage Severity and Type...</div>",
+        unsafe_allow_html=True
+    )
+
+    time.sleep(8)
+
+    scaled = scaler.transform(df)
+    df["Predicted_Risk_Score"] = risk_model.predict(scaled)
+    df["Severity_Class"] = severity_encoder.inverse_transform(
+        severity_model.predict(scaled))
+    df["Outage_Type"] = outage_encoder.inverse_transform(
+        outage_model.predict(scaled))
+
+    # ✅ FIX color mapping for upload table
+    def color_severity(val):
+        val = str(val).upper()
+        if val == "HIGH":
+            return "background-color:white; color:red;"
+        elif val == "MEDIUM":
+            return "background-color:white; color:orange;"
+        elif val == "LOW":
+            return "background-color:white; color:yellow;"
+        elif val == "NORMAL":
+            return "background-color:white; color:green;"
+        return ""
+
+    styled_df = df.style \
+        .applymap(color_severity, subset=["Severity_Class"]) \
+        .set_properties(subset=["Predicted_Risk_Score","Severity_Class","Outage_Type"],
+                        **{'background-color':'#E3F2FD'})
+
+    status_placeholder.markdown(
+        "<div class='status-text'>AI Smart Predictions</div>",
+        unsafe_allow_html=True
+    )
+
+    st.dataframe(styled_df, use_container_width=True)
+
+# ==========================================================
+# FEATURE IMPORTANCE
+# ==========================================================
+st.markdown("### Top Features Impacting System Outage")
+
+importance = risk_model.feature_importances_
+df_imp = pd.DataFrame({"Feature":kpi_names,"Importance":importance})
+df_imp = df_imp.sort_values(by="Importance", ascending=False).head(8)
+
+fig2 = px.bar(df_imp, x="Importance", y="Feature", orientation='h')
+fig2.update_layout(height=300)
+st.plotly_chart(fig2, use_container_width=True)
