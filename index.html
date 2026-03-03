@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PETROGUARD — Predictive Intelligence Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050d1a;--panel:#091628;--panel2:#0d1f35;--border:#0e3a5c;--accent:#00d4ff;--accent2:#00ff9d;--warn:#ffb300;--danger:#ff3d57;--text:#c8e6ff;--muted:#4a7a99;--glow:0 0 18px rgba(0,212,255,0.25)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(0,100,180,0.08) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,70,120,0.06) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,70,120,0.06) 40px);pointer-events:none;z-index:0}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(5,13,26,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);display:flex;align-items:center;padding:0 20px;height:52px;gap:20px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;color:#fff;white-space:nowrap}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#0066cc,#00d4ff);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:900;animation:pulse-icon 3s ease-in-out infinite}
+@keyframes pulse-icon{0%,100%{box-shadow:0 0 8px rgba(0,212,255,0.4)}50%{box-shadow:0 0 20px rgba(0,212,255,0.8)}}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:2px;margin-left:20px}
+.nav-links a{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:6px 14px;border-radius:3px;transition:all .2s;text-transform:uppercase;cursor:pointer;border:1px solid transparent}
+.nav-links a:hover{color:var(--accent);background:rgba(0,212,255,0.06)}
+.nav-links a.active{color:var(--accent);background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.25)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.status-badge{font-family:'Share Tech Mono',monospace;font-size:11px;padding:3px 10px;border-radius:2px;letter-spacing:1px;border:1px solid}
+.status-badge.live{color:var(--accent2);border-color:var(--accent2);background:rgba(0,255,157,0.07);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.clock{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent)}
+
+/* TICKER */
+.alert-ticker{background:rgba(255,61,87,0.08);border-bottom:1px solid rgba(255,61,87,0.3);padding:5px 20px;display:flex;gap:10px;align-items:center;overflow:hidden}
+.ticker-label{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--danger);white-space:nowrap;padding:2px 8px;border:1px solid var(--danger);border-radius:2px}
+.ticker-scroll{overflow:hidden;flex:1}
+.ticker-inner{display:inline-block;white-space:nowrap;animation:ticker 30s linear infinite;font-family:'Share Tech Mono',monospace;font-size:11px;color:#ff8fa0}
+@keyframes ticker{0%{transform:translateX(60%)}100%{transform:translateX(-100%)}}
+
+/* TAB PAGES */
+.tab-page{display:none;position:relative;z-index:1;padding:14px 16px}
+.tab-page.active{display:block}
+
+/* PANELS */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.panel-header{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--panel2)}
+.panel-title{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a0c8e8}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.green{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+.dot.orange{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.dot.blue{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.dot.purple{background:#a78bfa;box-shadow:0 0 6px #a78bfa}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}
+.kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px 14px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.kpi-card:hover{border-color:var(--accent);box-shadow:var(--glow)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--accent))}
+.kpi-label{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.kpi-value{font-family:'Share Tech Mono',monospace;font-size:26px;line-height:1;color:var(--card-color,var(--accent))}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-change{font-size:11px;margin-top:3px}
+.kpi-change.up{color:var(--accent2)}
+.kpi-change.down{color:var(--danger)}
+
+/* GRIDS */
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+.grid-1-2{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:12px}
+.grid-3-col{display:grid;grid-template-columns:2fr 1.2fr 1fr;gap:12px;margin-bottom:12px}
+
+/* BADGE */
+.badge{font-family:'Share Tech Mono',monospace;font-size:10px;padding:1px 7px;border-radius:2px;border:1px solid;letter-spacing:.5px}
+.badge.high{color:var(--danger);border-color:var(--danger);background:rgba(255,61,87,0.1)}
+.badge.medium{color:var(--warn);border-color:var(--warn);background:rgba(255,179,0,0.1)}
+.badge.normal{color:var(--accent);border-color:var(--accent);background:rgba(0,212,255,0.1)}
+.badge.low{color:var(--accent2);border-color:var(--accent2);background:rgba(0,255,157,0.1)}
+.badge.neutral{color:#a0c8e8;border-color:var(--border);background:rgba(255,255,255,0.04)}
+
+/* ALERT LIST */
+.alert-list{display:flex;flex-direction:column;gap:6px;padding:10px;max-height:280px;overflow-y:auto}
+.alert-list::-webkit-scrollbar{width:4px}
+.alert-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.alert-item{padding:9px 12px;border-radius:3px;border-left:3px solid;background:rgba(255,255,255,0.03);display:flex;gap:10px;align-items:flex-start;transition:background .2s}
+.alert-item:hover{background:rgba(255,255,255,0.06)}
+.alert-item.high{border-color:var(--danger)}
+.alert-item.medium{border-color:var(--warn)}
+.alert-item.normal{border-color:var(--accent)}
+.alert-item.low{border-color:var(--accent2)}
+.alert-icon{font-size:14px;margin-top:1px}
+.alert-content{flex:1}
+.alert-title{font-weight:600;font-size:12px;margin-bottom:2px}
+.alert-desc{color:var(--muted);font-size:11px;line-height:1.4}
+.alert-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+
+/* SEVERITY CARDS */
+.severity-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.sev-card{padding:10px;border-radius:3px;border:1px solid;text-align:center;transition:box-shadow .3s}
+.sev-card:hover{box-shadow:var(--glow)}
+.sev-card.high{border-color:rgba(255,61,87,0.4);background:rgba(255,61,87,0.06)}
+.sev-card.medium{border-color:rgba(255,179,0,0.4);background:rgba(255,179,0,0.06)}
+.sev-card.normal{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.06)}
+.sev-card.low{border-color:rgba(0,255,157,0.3);background:rgba(0,255,157,0.06)}
+.sev-num{font-family:'Share Tech Mono',monospace;font-size:28px;line-height:1}
+.sev-card.high .sev-num{color:var(--danger)}
+.sev-card.medium .sev-num{color:var(--warn)}
+.sev-card.normal .sev-num{color:var(--accent)}
+.sev-card.low .sev-num{color:var(--accent2)}
+.sev-label{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.sev-pct{font-size:10px;color:var(--muted);margin-top:2px;font-family:'Share Tech Mono',monospace}
+
+/* GAUGE */
+.gauge-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.gauge-item{text-align:center}
+.gauge-label{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.gauge-val{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--accent)}
+.gauge-unit{font-size:11px;color:var(--muted)}
+.gauge-bar-wrap{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:6px}
+.gauge-bar{height:100%;border-radius:2px}
+
+/* ACCURACY */
+.accuracy-section{padding:12px;display:flex;flex-direction:column;gap:12px}
+.accuracy-header{display:flex;justify-content:space-between;margin-bottom:5px}
+.accuracy-name{font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.accuracy-pct{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent2)}
+.acc-bar-wrap{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden}
+.acc-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#00ff9d,#00d4ff)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.data-table td{padding:7px 10px;border-bottom:1px solid rgba(14,58,92,0.5);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px}
+.data-table tr:hover td{background:rgba(0,212,255,0.04)}
+.data-table .tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.tag-high{background:rgba(255,61,87,0.15);color:var(--danger)}
+.tag-med{background:rgba(255,179,0,0.15);color:var(--warn)}
+.tag-low{background:rgba(0,255,157,0.15);color:var(--accent2)}
+.tag-norm{background:rgba(0,212,255,0.12);color:var(--accent)}
+
+/* PREDICTION CARD */
+.pred-card{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:14px;transition:border-color .2s,box-shadow .2s}
+.pred-card:hover{border-color:var(--accent);box-shadow:var(--glow)}
+.pred-type{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.pred-score-wrap{display:flex;align-items:baseline;gap:6px;margin-bottom:8px}
+.pred-score{font-family:'Share Tech Mono',monospace;font-size:32px;line-height:1}
+.pred-label{font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase}
+.pred-bar-wrap{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:8px}
+.pred-bar{height:100%;border-radius:2px}
+.pred-meta{display:flex;flex-wrap:wrap;gap:6px}
+.pred-sensor{font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+
+/* REPORT */
+.report-section{padding:16px}
+.report-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.report-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(14,58,92,0.4);font-size:12px}
+.report-key{color:var(--muted);font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;font-size:11px}
+.report-val{font-family:'Share Tech Mono',monospace;color:var(--text)}
+.dl-btn{display:inline-flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:8px 18px;border-radius:3px;cursor:pointer;transition:all .2s;background:transparent;text-decoration:none}
+.dl-btn:hover{background:rgba(0,212,255,0.1);box-shadow:var(--glow)}
+
+/* SCAN LINE */
+.scan-line{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent);animation:scan 8s linear infinite;pointer-events:none;z-index:999}
+@keyframes scan{0%{top:-2px}100%{top:100vh}}
+
+/* FADE IN */
+.fade-in{animation:fadeIn .5s ease forwards;opacity:0}
+@keyframes fadeIn{to{opacity:1}}
+
+/* SCROLLBAR */
+html{scrollbar-width:thin;scrollbar-color:var(--border) var(--bg)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* PAGE TRANSITION */
+.tab-page{animation:none}
+.tab-page.active{animation:pageIn .3s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="scan-line"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">PG</div>
+    PETROGUARD <span style="font-size:11px;font-weight:400;letter-spacing:2px;color:#6a9ab8;margin-left:4px;align-self:flex-end;padding-bottom:2px">PREDICTIVE INTELLIGENCE PLATFORM</span>
+  </div>
+  <nav class="nav-links">
+    <a onclick="showTab('overview')" id="tab-overview" class="active">OVERVIEW</a>
+    <a onclick="showTab('assets')" id="tab-assets">ASSETS</a>
+    <a onclick="showTab('analytics')" id="tab-analytics">ANALYTICS</a>
+    <a onclick="showTab('predictions')" id="tab-predictions">PREDICTIONS</a>
+    <a onclick="showTab('reports')" id="tab-reports">REPORTS</a>
+  </nav>
+  <div class="header-right">
+    <span class="status-badge live">● LIVE FEED</span>
+    <span class="status-badge" style="color:var(--accent);border-color:var(--accent)">AI MODEL v2.4</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="alert-ticker">
+  <span class="ticker-label">⚠ ALERT</span>
+  <div class="ticker-scroll">
+    <span class="ticker-inner">🔴 HIGH RISK — Gas Leak · Pressure 117.4 bar · Risk Score 85.2 &nbsp;|&nbsp; 🟡 MEDIUM — Power Failure predicted · Zone 3 RPM anomaly &nbsp;|&nbsp; 🔴 Compressor Failure · Vibration 11.6 mm/s · Maint overdue 98 days &nbsp;|&nbsp; 🟡 Pipeline Degradation · Corrosion 2.36 mm/yr · Schedule inspection &nbsp;|&nbsp; ✅ Zone 1 inspection complete · No anomaly found</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: OVERVIEW ═══════════════════ -->
+<div class="tab-page active" id="page-overview">
+  <div class="kpi-row">
+    <div class="kpi-card" style="--card-color:#ff3d57"><div class="kpi-label">Critical Alerts</div><div class="kpi-value">316</div><div class="kpi-sub">HIGH severity events</div><div class="kpi-change down">↑ 7.0% of total records</div></div>
+    <div class="kpi-card" style="--card-color:#ffb300"><div class="kpi-label">Total Events</div><div class="kpi-value">4,500</div><div class="kpi-sub">Monitored data points</div><div class="kpi-change up">↑ Lloyd's Gas Assets</div></div>
+    <div class="kpi-card" style="--card-color:#00d4ff"><div class="kpi-label">Avg Risk Score</div><div class="kpi-value">51.4</div><div class="kpi-sub">Out of 100</div><div class="kpi-change" style="color:var(--warn)">→ Medium Risk Zone</div></div>
+    <div class="kpi-card" style="--card-color:#00ff9d"><div class="kpi-label">Outage Prediction</div><div class="kpi-value">98.4%</div><div class="kpi-sub">Model accuracy</div><div class="kpi-change up">↑ XGBoost Model</div></div>
+    <div class="kpi-card" style="--card-color:#a78bfa"><div class="kpi-label">Severity Accuracy</div><div class="kpi-value">87.8%</div><div class="kpi-sub">Classification precision</div><div class="kpi-change up">↑ Gradient Boost</div></div>
+    <div class="kpi-card" style="--card-color:#f97316"><div class="kpi-label">Top Risk Type</div><div class="kpi-value" style="font-size:16px;padding-top:4px">GAS LEAK</div><div class="kpi-sub">1,259 events · 28%</div><div class="kpi-change down">↓ Highest frequency</div></div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">AI Risk Score — Time Series</span></div>
+      <div style="padding:10px;height:180px"><canvas id="riskChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot green"></div><span class="panel-title">Live Sensor Readings</span></div>
+      <div class="gauge-grid">
+        <div class="gauge-item"><div class="gauge-label">Pressure</div><div class="gauge-val">79.3 <span class="gauge-unit">bar</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:66%;background:linear-gradient(90deg,#00d4ff,#0099cc)"></div></div></div>
+        <div class="gauge-item"><div class="gauge-label">Temperature</div><div class="gauge-val">30.3 <span class="gauge-unit">°C</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:38%;background:linear-gradient(90deg,#ffb300,#ff6b35)"></div></div></div>
+        <div class="gauge-item"><div class="gauge-label">Vibration</div><div class="gauge-val">5.98 <span class="gauge-unit">mm/s</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:50%;background:linear-gradient(90deg,#00ff9d,#00cc7a)"></div></div></div>
+        <div class="gauge-item"><div class="gauge-label">Comp. RPM</div><div class="gauge-val">3,214 <span class="gauge-unit">rpm</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:64%;background:linear-gradient(90deg,#a78bfa,#7c3aed)"></div></div></div>
+        <div class="gauge-item"><div class="gauge-label">Gas Leak</div><div class="gauge-val">248 <span class="gauge-unit">ppm</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:49%;background:linear-gradient(90deg,#ff3d57,#cc0022)"></div></div></div>
+        <div class="gauge-item"><div class="gauge-label">Bearing Temp</div><div class="gauge-val">87.4 <span class="gauge-unit">°C</span></div><div class="gauge-bar-wrap"><div class="gauge-bar" style="width:73%;background:linear-gradient(90deg,#ff6b35,#ff3d57)"></div></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Outage Distribution</span></div>
+      <div style="padding:10px;height:140px"><canvas id="donutChart"></canvas></div>
+      <div style="padding:0 12px 10px;display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:7px;height:7px;border-radius:50%;background:#ff3d57;flex-shrink:0"></div><span style="flex:1;color:var(--muted)">Gas Leak</span><span style="font-family:'Share Tech Mono',monospace">1,259</span><span style="font-family:'Share Tech Mono',monospace;color:var(--muted);width:36px;text-align:right">28%</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:7px;height:7px;border-radius:50%;background:#ffb300;flex-shrink:0"></div><span style="flex:1;color:var(--muted)">Power Failure</span><span style="font-family:'Share Tech Mono',monospace">1,045</span><span style="font-family:'Share Tech Mono',monospace;color:var(--muted);width:36px;text-align:right">23%</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:7px;height:7px;border-radius:50%;background:#a78bfa;flex-shrink:0"></div><span style="flex:1;color:var(--muted)">Pipeline Degradation</span><span style="font-family:'Share Tech Mono',monospace">820</span><span style="font-family:'Share Tech Mono',monospace;color:var(--muted);width:36px;text-align:right">18%</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:7px;height:7px;border-radius:50%;background:#f97316;flex-shrink:0"></div><span style="flex:1;color:var(--muted)">Compressor Failure</span><span style="font-family:'Share Tech Mono',monospace">541</span><span style="font-family:'Share Tech Mono',monospace;color:var(--muted);width:36px;text-align:right">12%</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:7px;height:7px;border-radius:50%;background:#00d4ff;flex-shrink:0"></div><span style="flex:1;color:var(--muted)">Pressure Failure</span><span style="font-family:'Share Tech Mono',monospace">398</span><span style="font-family:'Share Tech Mono',monospace;color:var(--muted);width:36px;text-align:right">9%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:12px">
+    <div class="panel"><div class="panel-header"><div class="dot blue"></div><span class="panel-title">Vibration (mm/s)</span><span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--warn)">AVG 5.98</span></div><div style="padding:10px;height:110px"><canvas id="vibChart"></canvas></div></div>
+    <div class="panel"><div class="panel-header"><div class="dot orange"></div><span class="panel-title">Temperature (°C)</span><span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--warn)">AVG 30.3</span></div><div style="padding:10px;height:110px"><canvas id="tempChart"></canvas></div></div>
+    <div class="panel"><div class="panel-header"><div class="dot green"></div><span class="panel-title">Pressure (bar)</span><span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent)">AVG 79.3</span></div><div style="padding:10px;height:110px"><canvas id="pressChart"></canvas></div></div>
+  </div>
+
+  <div class="grid-3-col">
+    <div class="panel">
+      <div class="panel-header"><div class="dot red"></div><span class="panel-title">Real-Time AI Alert Feed</span><span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">8 ACTIVE</span></div>
+      <div class="alert-list">
+        <div class="alert-item high"><div class="alert-icon">🔴</div><div class="alert-content"><div class="alert-title" style="color:#ff8fa0">Gas Leak — HIGH RISK DETECTED</div><div class="alert-desc">Pressure: 117.4 bar · Temp: 53.8°C · Vibration: 9.16 mm/s. Maint overdue: 174 days. Immediate shutdown recommended.</div><div class="alert-meta"><span class="badge high">HIGH</span><span class="badge neutral">GAS LEAK</span><span class="badge neutral">Risk: 99.8</span></div></div></div>
+        <div class="alert-item high"><div class="alert-icon">🔴</div><div class="alert-content"><div class="alert-title" style="color:#ff8fa0">Power Failure — Critical Threshold</div><div class="alert-desc">Pressure: 115.7 bar · Temp: 72.3°C · Vibration: 11.6 mm/s. Voltage fluctuation 11.9%. Deploy team.</div><div class="alert-meta"><span class="badge high">HIGH</span><span class="badge neutral">POWER FAILURE</span><span class="badge neutral">Risk: 93.7</span></div></div></div>
+        <div class="alert-item high"><div class="alert-icon">🔴</div><div class="alert-content"><div class="alert-title" style="color:#ff8fa0">Compressor Failure — Bearing Alert</div><div class="alert-desc">Vibration: 11.45 mm/s (critical). Pressure: 104.8 bar. Corrosion rate: 0.51 mm/yr. Schedule maintenance.</div><div class="alert-meta"><span class="badge high">HIGH</span><span class="badge neutral">COMPRESSOR</span><span class="badge neutral">Risk: 94.1</span></div></div></div>
+        <div class="alert-item medium"><div class="alert-icon">🟡</div><div class="alert-content"><div class="alert-title" style="color:#ffd54f">Pressure Failure — Zone B Rising</div><div class="alert-desc">Pressure: 117.7 bar exceeds nominal. Temp: 61.9°C · Vibration: 8.15 mm/s. Inspection within 12h.</div><div class="alert-meta"><span class="badge medium">MEDIUM</span><span class="badge neutral">PRESSURE FAIL</span><span class="badge neutral">Risk: 78.1</span></div></div></div>
+        <div class="alert-item medium"><div class="alert-icon">🟡</div><div class="alert-content"><div class="alert-title" style="color:#ffd54f">Gas Leak — Zone C Monitoring</div><div class="alert-desc">Gas: 442 ppm above threshold. Corrosion: 0.48 mm/yr elevated. Containment inspection needed.</div><div class="alert-meta"><span class="badge medium">MEDIUM</span><span class="badge neutral">GAS LEAK</span><span class="badge neutral">Risk: 77.4</span></div></div></div>
+        <div class="alert-item normal"><div class="alert-icon">🔵</div><div class="alert-content"><div class="alert-title" style="color:#80dfff">Pipeline Degradation — Routine</div><div class="alert-desc">Corrosion rate: 2.36 mm/yr. Maintenance overdue 55 days. Inspection recommended within 7 days.</div><div class="alert-meta"><span class="badge normal">NORMAL</span><span class="badge neutral">PIPELINE</span><span class="badge neutral">Risk: 65.7</span></div></div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="panel-header"><div class="dot red"></div><span class="panel-title">Severity Breakdown</span></div>
+        <div class="severity-grid">
+          <div class="sev-card high"><div class="sev-num">316</div><div class="sev-label">HIGH</div><div class="sev-pct">7.0%</div></div>
+          <div class="sev-card medium"><div class="sev-num">2,065</div><div class="sev-label">MEDIUM</div><div class="sev-pct">45.9%</div></div>
+          <div class="sev-card normal"><div class="sev-num">1,887</div><div class="sev-label">NORMAL</div><div class="sev-pct">41.9%</div></div>
+          <div class="sev-card low"><div class="sev-num">232</div><div class="sev-label">LOW</div><div class="sev-pct">5.2%</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="dot green"></div><span class="panel-title">AI Model Performance</span></div>
+        <div class="accuracy-section">
+          <div><div class="accuracy-header"><span class="accuracy-name">Outage Type</span><span class="accuracy-pct">98.4%</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:98.4%"></div></div></div>
+          <div><div class="accuracy-header"><span class="accuracy-name">Severity Class</span><span class="accuracy-pct">87.8%</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:87.8%;background:linear-gradient(90deg,#a78bfa,#00d4ff)"></div></div></div>
+          <div><div class="accuracy-header"><span class="accuracy-name">Risk Score R²</span><span class="accuracy-pct">97.0%</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:97%;background:linear-gradient(90deg,#f97316,#ffb300)"></div></div></div>
+          <div style="margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:center">XGBOOST · GRADIENT BOOST · REGRESSION</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Actual vs Predicted</span></div>
+      <div style="padding:10px;height:250px"><canvas id="compareChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: ASSETS ═══════════════════ -->
+<div class="tab-page" id="page-assets">
+  <div class="kpi-row">
+    <div class="kpi-card" style="--card-color:#00d4ff"><div class="kpi-label">Total Assets</div><div class="kpi-value">24</div><div class="kpi-sub">Monitored equipment</div></div>
+    <div class="kpi-card" style="--card-color:#00ff9d"><div class="kpi-label">Healthy</div><div class="kpi-value">14</div><div class="kpi-sub">Operating normally</div></div>
+    <div class="kpi-card" style="--card-color:#ffb300"><div class="kpi-label">Warning</div><div class="kpi-value">7</div><div class="kpi-sub">Needs monitoring</div></div>
+    <div class="kpi-card" style="--card-color:#ff3d57"><div class="kpi-label">Critical</div><div class="kpi-value">3</div><div class="kpi-sub">Immediate action</div></div>
+    <div class="kpi-card" style="--card-color:#f97316"><div class="kpi-label">Avg Equipment Age</div><div class="kpi-value">15.1 <span style="font-size:14px">yr</span></div><div class="kpi-sub">Across all assets</div></div>
+    <div class="kpi-card" style="--card-color:#a78bfa"><div class="kpi-label">Avg Maint Overdue</div><div class="kpi-value">89 <span style="font-size:14px">d</span></div><div class="kpi-sub">Days past schedule</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Asset Register — Equipment Status</span></div>
+      <div style="padding:0 10px 10px;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Asset ID</th><th>Type</th><th>Zone</th><th>Age (yr)</th><th>Maint Overdue</th><th>Risk Score</th><th>Status</th><th>Last Outage</th></tr></thead>
+          <tbody>
+            <tr><td>COMP-C204</td><td>Compressor</td><td>Zone A</td><td>26</td><td>55 days</td><td style="color:var(--warn)">65.7</td><td><span class="tag tag-med">WARNING</span></td><td>Pipeline_Degradation</td></tr>
+            <tr><td>PUMP-P027</td><td>Pump</td><td>Zone B</td><td>18</td><td>26 days</td><td style="color:var(--warn)">66.2</td><td><span class="tag tag-med">WARNING</span></td><td>Power_Failure</td></tr>
+            <tr><td>TURB-T033</td><td>Turbine</td><td>Zone A</td><td>9</td><td>160 days</td><td style="color:var(--warn)">53.2</td><td><span class="tag tag-med">WARNING</span></td><td>Pressure_Failure</td></tr>
+            <tr><td>HEX-H012</td><td>Heat Exchanger</td><td>Zone C</td><td>23</td><td>107 days</td><td style="color:var(--danger)">75.2</td><td><span class="tag tag-high">CRITICAL</span></td><td>Pressure_Failure</td></tr>
+            <tr><td>PIPE-P061</td><td>Pipeline</td><td>Zone B</td><td>1</td><td>23 days</td><td style="color:var(--warn)">58.2</td><td><span class="tag tag-med">WARNING</span></td><td>Gas_Leak</td></tr>
+            <tr><td>VALVE-V014</td><td>Valve</td><td>Zone A</td><td>13</td><td>104 days</td><td style="color:var(--accent2)">32.0</td><td><span class="tag tag-norm">NORMAL</span></td><td>No_Outage</td></tr>
+            <tr><td>COMP-C188</td><td>Compressor</td><td>Zone D</td><td>18</td><td>26 days</td><td style="color:var(--accent2)">41.6</td><td><span class="tag tag-norm">NORMAL</span></td><td>Compressor_Failure</td></tr>
+            <tr><td>TURB-T007</td><td>Turbine</td><td>Zone C</td><td>7</td><td>13 days</td><td style="color:var(--accent2)">40.9</td><td><span class="tag tag-norm">NORMAL</span></td><td>Power_Failure</td></tr>
+            <tr><td>PUMP-P042</td><td>Pump</td><td>Zone A</td><td>7</td><td>135 days</td><td style="color:var(--danger)">75.0</td><td><span class="tag tag-high">CRITICAL</span></td><td>Power_Failure</td></tr>
+            <tr><td>HEX-H028</td><td>Heat Exchanger</td><td>Zone B</td><td>4</td><td>108 days</td><td style="color:var(--warn)">60.8</td><td><span class="tag tag-med">WARNING</span></td><td>Pipeline_Degradation</td></tr>
+            <tr><td>COMP-C301</td><td>Compressor</td><td>Zone C</td><td>6</td><td>78 days</td><td style="color:var(--danger)">81.1</td><td><span class="tag tag-high">CRITICAL</span></td><td>Gas_Leak</td></tr>
+            <tr><td>PIPE-P088</td><td>Pipeline</td><td>Zone D</td><td>19</td><td>124 days</td><td style="color:var(--accent2)">40.2</td><td><span class="tag tag-norm">NORMAL</span></td><td>Power_Failure</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Asset Health by Type</span></div>
+        <div style="padding:12px;height:200px"><canvas id="assetTypeChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="dot purple"></div><span class="panel-title">Energy Consumption (kWh)</span></div>
+        <div style="padding:12px;height:160px"><canvas id="energyChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-header"><div class="dot red"></div><span class="panel-title">Maintenance Overdue Distribution</span></div>
+      <div style="padding:12px;height:160px"><canvas id="maintChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Corrosion Rate Trend</span></div>
+      <div style="padding:12px;height:160px"><canvas id="corrosionChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot green"></div><span class="panel-title">Equipment Age Profile</span></div>
+      <div style="padding:12px;height:160px"><canvas id="ageChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: ANALYTICS ═══════════════════ -->
+<div class="tab-page" id="page-analytics">
+  <div class="kpi-row">
+    <div class="kpi-card" style="--card-color:#00d4ff"><div class="kpi-label">Avg Pressure</div><div class="kpi-value">79.3 <span style="font-size:14px">bar</span></div><div class="kpi-sub">All records</div></div>
+    <div class="kpi-card" style="--card-color:#ffb300"><div class="kpi-label">Avg Temperature</div><div class="kpi-value">30.3 <span style="font-size:14px">°C</span></div><div class="kpi-sub">All records</div></div>
+    <div class="kpi-card" style="--card-color:#00ff9d"><div class="kpi-label">Avg Vibration</div><div class="kpi-value">5.98 <span style="font-size:14px">mm/s</span></div><div class="kpi-sub">All records</div></div>
+    <div class="kpi-card" style="--card-color:#a78bfa"><div class="kpi-label">Avg Gas Leak</div><div class="kpi-value">248 <span style="font-size:14px">ppm</span></div><div class="kpi-sub">All records</div></div>
+    <div class="kpi-card" style="--card-color:#f97316"><div class="kpi-label">Avg Energy</div><div class="kpi-value">5,512 <span style="font-size:14px">kWh</span></div><div class="kpi-sub">Per event</div></div>
+    <div class="kpi-card" style="--card-color:#ff3d57"><div class="kpi-label">Avg Corrosion</div><div class="kpi-value">1.27 <span style="font-size:14px">mm/yr</span></div><div class="kpi-sub">All assets</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Risk Score Distribution by Outage Type</span></div>
+      <div style="padding:12px;height:240px"><canvas id="riskBoxChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Sensor Correlation Heatmap — Avg by Severity</span></div>
+      <div style="padding:14px">
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>Severity</th><th>Pressure</th><th>Temp °C</th><th>Vibration</th><th>Gas ppm</th><th>Corrosion</th><th>Maint Days</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--danger)">95.4</td><td style="color:var(--danger)">44.2</td><td style="color:var(--danger)">7.8</td><td style="color:var(--danger)">376</td><td style="color:var(--danger)">1.44</td><td style="color:var(--danger)">102</td></tr>
+            <tr><td><span class="tag tag-med">MEDIUM</span></td><td style="color:var(--warn)">82.1</td><td style="color:var(--warn)">33.1</td><td style="color:var(--warn)">6.2</td><td style="color:var(--warn)">264</td><td style="color:var(--warn)">1.31</td><td style="color:var(--warn)">94</td></tr>
+            <tr><td><span class="tag tag-norm">NORMAL</span></td><td style="color:var(--accent)">75.8</td><td style="color:var(--accent)">26.4</td><td style="color:var(--accent)">5.6</td><td style="color:var(--accent)">218</td><td style="color:var(--accent)">1.19</td><td style="color:var(--accent)">82</td></tr>
+            <tr><td><span class="tag tag-low">LOW</span></td><td style="color:var(--accent2)">68.3</td><td style="color:var(--accent2)">18.7</td><td style="color:var(--accent2)">4.1</td><td style="color:var(--accent2)">148</td><td style="color:var(--accent2)">0.97</td><td style="color:var(--accent2)">61</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;letter-spacing:1px">KEY INSIGHT: HIGH severity events show 26% higher pressure, 39% higher vibration and 70% more gas leakage vs LOW severity events.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Pressure vs Risk Score</span></div>
+      <div style="padding:10px;height:200px"><canvas id="scatterPressure"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Vibration vs Risk Score</span></div>
+      <div style="padding:10px;height:200px"><canvas id="scatterVib"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot green"></div><span class="panel-title">Outage Frequency Trend</span></div>
+      <div style="padding:10px;height:200px"><canvas id="freqChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: PREDICTIONS ═══════════════════ -->
+<div class="tab-page" id="page-predictions">
+  <div class="kpi-row">
+    <div class="kpi-card" style="--card-color:#00ff9d"><div class="kpi-label">Overall Accuracy</div><div class="kpi-value">98.4%</div><div class="kpi-sub">Outage type prediction</div></div>
+    <div class="kpi-card" style="--card-color:#a78bfa"><div class="kpi-label">Severity Accuracy</div><div class="kpi-value">87.8%</div><div class="kpi-sub">Classification model</div></div>
+    <div class="kpi-card" style="--card-color:#00d4ff"><div class="kpi-label">Risk Score R²</div><div class="kpi-value">0.97</div><div class="kpi-sub">Regression fit</div></div>
+    <div class="kpi-card" style="--card-color:#ffb300"><div class="kpi-label">Avg Pred Error</div><div class="kpi-value">2.1</div><div class="kpi-sub">Risk score MAE</div></div>
+    <div class="kpi-card" style="--card-color:#f97316"><div class="kpi-label">Model</div><div class="kpi-value" style="font-size:16px;padding-top:4px">XGBOOST</div><div class="kpi-sub">+ Gradient Boost</div></div>
+    <div class="kpi-card" style="--card-color:#ff3d57"><div class="kpi-label">High Risk Predicted</div><div class="kpi-value">316</div><div class="kpi-sub">Correctly flagged</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><div class="dot red"></div><span class="panel-title">Top HIGH Risk Predictions — Active Queue</span></div>
+      <div style="padding:0 10px 10px;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Predicted Outage</th><th>Actual</th><th>Risk Score</th><th>Pressure</th><th>Temp</th><th>Vibration</th><th>Severity</th><th>Match</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--danger)">100.0</td><td>109.9</td><td>79.4°C</td><td>10.6</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</span></td></tr>
+            <tr><td>2</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--danger)">99.8</td><td>116.8</td><td>76.5°C</td><td>7.3</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>3</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--danger)">94.9</td><td>115.7</td><td>42.1°C</td><td>7.9</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>4</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--danger)">94.1</td><td>104.8</td><td>55.9°C</td><td>11.5</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>5</td><td>Power_Failure</td><td>Power_Failure</td><td style="color:var(--danger)">93.7</td><td>115.7</td><td>72.3°C</td><td>11.6</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>6</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--warn)">85.2</td><td>117.4</td><td>53.8°C</td><td>9.2</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>7</td><td>Pressure_Failure</td><td>Pressure_Failure</td><td style="color:var(--warn)">78.1</td><td>117.7</td><td>61.9°C</td><td>8.2</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+            <tr><td>8</td><td>Gas_Leak</td><td>Gas_Leak</td><td style="color:var(--warn)">77.4</td><td>83.7</td><td>77.2°C</td><td>8.1</td><td><span class="tag tag-high">HIGH</span></td><td style="color:var(--accent2)">✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot green"></div><span class="panel-title">Accuracy by Outage Type</span></div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">No Outage</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent2)">99.5%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:99.5%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Gas Leak</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent2)">99.4%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:99.4%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Power Failure</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent2)">98.3%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:98.3%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Pipeline Degradation</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent2)">98.3%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:98.3%;background:linear-gradient(90deg,#a78bfa,#00d4ff)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Compressor Failure</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--warn)">97.6%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:97.6%;background:linear-gradient(90deg,#f97316,#ffb300)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Pressure Failure</span><span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--warn)">96.2%</span></div>
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:96.2%;background:linear-gradient(90deg,#ff3d57,#ff6b35)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Actual vs Predicted Risk Score</span></div>
+      <div style="padding:10px;height:220px"><canvas id="predScatterChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Prediction Confidence Distribution</span></div>
+      <div style="padding:10px;height:220px"><canvas id="confChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="dot purple"></div><span class="panel-title">Feature Importance (Top 6)</span></div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Inspection Risk Score</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#a78bfa">0.31</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:91%;background:linear-gradient(90deg,#a78bfa,#7c3aed)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Gas Leak PPM</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--danger)">0.22</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:72%;background:linear-gradient(90deg,#ff3d57,#ff6b35)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Maint Overdue Days</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--warn)">0.18</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:59%;background:linear-gradient(90deg,#ffb300,#f97316)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Vibration mm/s</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent)">0.12</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:40%;background:linear-gradient(90deg,#00d4ff,#0099cc)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Pressure Bar</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent2)">0.09</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:30%;background:linear-gradient(90deg,#00ff9d,#00cc7a)"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Bearing Temp °C</span><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)">0.08</span></div><div class="acc-bar-wrap"><div class="acc-bar" style="width:26%;background:linear-gradient(90deg,#4a7a99,#2a5a79)"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: REPORTS ═══════════════════ -->
+<div class="tab-page" id="page-reports">
+  <div class="kpi-row">
+    <div class="kpi-card" style="--card-color:#00d4ff"><div class="kpi-label">Report Period</div><div class="kpi-value" style="font-size:16px;padding-top:4px">JAN 2026</div><div class="kpi-sub">Monthly AI Report</div></div>
+    <div class="kpi-card" style="--card-color:#00ff9d"><div class="kpi-label">Records Analyzed</div><div class="kpi-value">4,500</div><div class="kpi-sub">Total events</div></div>
+    <div class="kpi-card" style="--card-color:#ff3d57"><div class="kpi-label">Critical Events</div><div class="kpi-value">316</div><div class="kpi-sub">HIGH severity</div></div>
+    <div class="kpi-card" style="--card-color:#ffb300"><div class="kpi-label">Prevented Outages</div><div class="kpi-value">~287</div><div class="kpi-sub">Est. via early warning</div></div>
+    <div class="kpi-card" style="--card-color:#a78bfa"><div class="kpi-label">Cost Saving Est.</div><div class="kpi-value" style="font-size:18px;padding-top:4px">$2.4M</div><div class="kpi-sub">Avoided downtime</div></div>
+    <div class="kpi-card" style="--card-color:#f97316"><div class="kpi-label">Model Deployed</div><div class="kpi-value" style="font-size:16px;padding-top:4px">v2.4</div><div class="kpi-sub">XGBoost Ensemble</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><div class="dot blue"></div><span class="panel-title">Executive Summary — AI Asset Intelligence Report</span></div>
+      <div class="report-section">
+        <div class="report-title">📋 Overview</div>
+        <div class="report-row"><span class="report-key">Client</span><span class="report-val">Lloyd's Register — Island Gas Division</span></div>
+        <div class="report-row"><span class="report-key">Solution Provider</span><span class="report-val">Digitide AI Platform</span></div>
+        <div class="report-row"><span class="report-key">Report Period</span><span class="report-val">January 2026</span></div>
+        <div class="report-row"><span class="report-key">Data Source</span><span class="report-val">Industrial Sensor Array + AI Model v2.4</span></div>
+        <div class="report-row"><span class="report-key">Total Records</span><span class="report-val">4,500 event records</span></div>
+        <div class="report-row"><span class="report-key">Assets Monitored</span><span class="report-val">24 critical gas assets</span></div>
+        <div style="margin-top:16px"></div>
+        <div class="report-title">⚠️ Critical Findings</div>
+        <div class="report-row"><span class="report-key">High Risk Events</span><span class="report-val" style="color:var(--danger)">316 (7.0%)</span></div>
+        <div class="report-row"><span class="report-key">Most Common Outage</span><span class="report-val" style="color:var(--danger)">Gas Leak (1,259 events)</span></div>
+        <div class="report-row"><span class="report-key">Max Risk Score</span><span class="report-val" style="color:var(--danger)">100.0 / 100</span></div>
+        <div class="report-row"><span class="report-key">Avg Maint Overdue</span><span class="report-val" style="color:var(--warn)">89.4 days</span></div>
+        <div class="report-row"><span class="report-key">Avg Corrosion Rate</span><span class="report-val" style="color:var(--warn)">1.271 mm/year</span></div>
+        <div style="margin-top:16px"></div>
+        <div class="report-title">✅ Model Performance</div>
+        <div class="report-row"><span class="report-key">Outage Prediction Accuracy</span><span class="report-val" style="color:var(--accent2)">98.4%</span></div>
+        <div class="report-row"><span class="report-key">Severity Classification</span><span class="report-val" style="color:var(--accent2)">87.8%</span></div>
+        <div class="report-row"><span class="report-key">Risk Score Regression R²</span><span class="report-val" style="color:var(--accent2)">0.97</span></div>
+        <div class="report-row"><span class="report-key">Algorithm</span><span class="report-val">XGBoost + Gradient Boosting Ensemble</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="panel-header"><div class="dot orange"></div><span class="panel-title">Recommendations</span></div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="padding:10px;border-left:3px solid var(--danger);background:rgba(255,61,87,0.05);border-radius:2px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--danger);letter-spacing:1px;margin-bottom:4px">🔴 IMMEDIATE — Gas Leak Containment</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5">3 assets with risk score &gt;90. Pressure exceeds 109 bar. Deploy inspection team within 4 hours. Gas concentration at 489 ppm in worst case.</div>
+          </div>
+          <div style="padding:10px;border-left:3px solid var(--warn);background:rgba(255,179,0,0.05);border-radius:2px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--warn);letter-spacing:1px;margin-bottom:4px">🟡 HIGH PRIORITY — Maintenance Schedule</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5">Average maintenance overdue: 89 days. 7 assets exceed 100 days. Schedule batch maintenance window within 2 weeks to avoid cascade failures.</div>
+          </div>
+          <div style="padding:10px;border-left:3px solid var(--accent);background:rgba(0,212,255,0.05);border-radius:2px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px">🔵 MEDIUM — Vibration Monitoring</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5">4 compressors showing vibration &gt;10 mm/s. Install continuous vibration monitoring on COMP-C301, COMP-C204. Review bearing lubrication cycles.</div>
+          </div>
+          <div style="padding:10px;border-left:3px solid var(--accent2);background:rgba(0,255,157,0.05);border-radius:2px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--accent2);letter-spacing:1px;margin-bottom:4px">✅ STRATEGIC — Model Enhancement</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5">Severity accuracy at 87.8%. Retrain model with additional seasonal data. Consider adding flow_rate and voltage_fluctuation as primary features for next version.</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="dot green"></div><span class="panel-title">Monthly Outage Summary</span></div>
+        <div style="padding:12px;height:160px"><canvas id="reportChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:10px 0;display:flex;gap:14px;flex-wrap:wrap">
+    <button class="dl-btn" onclick="exportReport()">⬇ DOWNLOAD PDF REPORT</button>
+    <button class="dl-btn" style="color:var(--accent2);border-color:var(--accent2)" onclick="exportCSV()">⬇ EXPORT DATA CSV</button>
+    <button class="dl-btn" style="color:var(--warn);border-color:var(--warn)">📧 EMAIL TO STAKEHOLDERS</button>
+  </div>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('en-GB',{hour12:false})}
+setInterval(updateClock,1000);updateClock();
+
+// ── TAB SWITCHING ──
+let charts={};
+function showTab(tab){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  // init charts for that tab if not done
+  setTimeout(()=>initTabCharts(tab),50);
+}
+
+// ── CHART DEFAULTS ──
+Chart.defaults.color='#4a7a99';
+Chart.defaults.font.family="'Share Tech Mono', monospace";
+Chart.defaults.font.size=10;
+const gridOpts={color:'rgba(14,58,92,0.5)',drawBorder:false};
+
+const vibData=[4.52,8.82,4.27,10.95,5.16,0.71,2.03,7.1,9.47,2.53,10.42,4.3,9.6,10.91,1.21,1.79,1.69,3.03,5.88,7.33,3.29,7.68,1.63,9.44,0.66,3.02,6.88,2.38,0.57,4.96,8.85,0.34,11.55,5.7,7.26,6.78,5.43,9.47,9.4,9.87];
+const tempData=[74.9,64.8,-7.0,-10.2,57.8,51.3,14.5,-1.0,31.0,29.7,68.2,69.8,38.2,12.9,36.0,0.4,72.4,67.8,56.1,35.3,64.3,12.0,62.6,13.8,-0.6,71.3,41.7,30.0,44.3,50.2,61.1,-13.5,15.9,50.7,77.8,30.5,25.3,5.9,38.0,45.4];
+const pressData=[100.2,41.1,69.2,116.4,95.9,64.1,74.2,66.9,89.6,68.7,69.3,62.9,44.2,83.3,95.0,117.0,90.5,86.1,83.6,88.9,110.2,96.7,41.2,99.1,76.3,111.8,85.5,85.0,88.6,75.4,105.4,51.3,56.4,92.5,107.9,72.9,90.3,48.8,78.4,51.9];
+const riskData=[65.7,66.2,53.2,75.2,58.2,32.0,41.6,40.9,75.0,46.5,50.2,42.4,36.6,54.7,35.2,40.3,81.1,40.2,45.6,76.0,48.1,46.2,47.8,70.1,36.8,55.1,63.0,34.1,58.5,42.3,87.2,17.3,43.8,56.3,73.4,59.3,71.8,59.3,52.3,30.4,31.4,59.9,42.4,36.8,77.6,48.0,35.1,49.6,33.5,44.3,43.2,52.9,58.8,72.8,61.9,45.5,42.7,21.0,59.2,54.7,39.1,57.4,30.5,66.4,28.7,84.4,50.7,75.5,63.2,73.2,48.8,59.1,74.2,65.2,45.8,58.0,50.4,63.2,49.9,66.6];
+
+function mkLine(id,data,color,fill,label){
+  if(charts[id])return;
+  const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{type:'line',data:{labels:data.map((_,i)=>i+1),datasets:[{data,borderColor:color,borderWidth:1.5,backgroundColor:fill?`${color}22`:'transparent',fill:!!fill,tension:0.4,pointRadius:0,label:label||''}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:gridOpts,ticks:{maxTicksLimit:8}},y:{grid:gridOpts,ticks:{maxTicksLimit:5}}}}});
+}
+
+function initTabCharts(tab){
+  if(tab==='overview'){
+    // Risk chart with threshold
+    if(!charts['riskChart']){
+      const ctx=document.getElementById('riskChart');
+      if(ctx) charts['riskChart']=new Chart(ctx,{type:'line',data:{labels:riskData.map((_,i)=>i+1),datasets:[{data:riskData,borderColor:'#00d4ff',borderWidth:1.5,backgroundColor:(c)=>{const g=c.chart.ctx.createLinearGradient(0,0,0,180);g.addColorStop(0,'rgba(0,212,255,0.25)');g.addColorStop(1,'rgba(0,212,255,0)');return g},fill:true,tension:0.4,pointRadius:0},{data:riskData.map(()=>70),borderColor:'rgba(255,61,87,0.5)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:gridOpts,ticks:{maxTicksLimit:10}},y:{grid:gridOpts,min:0,max:100,ticks:{stepSize:25}}}}});
+    }
+    mkLine('vibChart',vibData,'#ffb300',true);
+    mkLine('tempChart',tempData,'#f97316',true);
+    mkLine('pressChart',pressData,'#00ff9d',true);
+    if(!charts['donutChart']){
+      const ctx=document.getElementById('donutChart');
+      if(ctx) charts['donutChart']=new Chart(ctx,{type:'doughnut',data:{labels:['Gas Leak','Power Failure','Pipeline Deg','Compressor Fail','Pressure Fail','No Outage'],datasets:[{data:[1259,1045,820,541,398,437],backgroundColor:['#ff3d57','#ffb300','#a78bfa','#f97316','#00d4ff','#00ff9d'],borderWidth:1,borderColor:'#091628'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+    }
+    if(!charts['compareChart']){
+      const ctx=document.getElementById('compareChart');
+      if(ctx) charts['compareChart']=new Chart(ctx,{type:'bar',data:{labels:['Gas Leak','Power Fail','Pipeline','Comp Fail','Pressure','No Outage'],datasets:[{label:'Actual',data:[1259,1045,820,541,398,437],backgroundColor:'rgba(0,212,255,0.6)',borderColor:'#00d4ff',borderWidth:1,borderRadius:2},{label:'Predicted',data:[1241,1058,835,522,410,434],backgroundColor:'rgba(0,255,157,0.4)',borderColor:'#00ff9d',borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4a7a99',font:{size:10}}}},scales:{x:{grid:{display:false}},y:{grid:gridOpts,ticks:{maxTicksLimit:5}}}}});
+    }
+  }
+  if(tab==='assets'){
+    if(!charts['assetTypeChart']){
+      const ctx=document.getElementById('assetTypeChart');
+      if(ctx) charts['assetTypeChart']=new Chart(ctx,{type:'bar',data:{labels:['Compressor','Pump','Turbine','Pipeline','Heat Exch','Valve'],datasets:[{label:'Healthy',data:[2,3,2,3,1,3],backgroundColor:'rgba(0,255,157,0.6)',borderRadius:2},{label:'Warning',data:[2,1,1,1,1,1],backgroundColor:'rgba(255,179,0,0.6)',borderRadius:2},{label:'Critical',data:[1,1,0,0,1,0],backgroundColor:'rgba(255,61,87,0.6)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4a7a99',font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:gridOpts,ticks:{maxTicksLimit:5}}}}});
+    }
+    if(!charts['energyChart']){
+      const ctx=document.getElementById('energyChart');
+      if(ctx){
+        const eData=[2775,3719,5531,2246,3354,9365,7599,5057,3243,4534,7327,1568,9818,8454,2286,6114,4811,6930,6785,1231,6956,5248,7085,7697,7524,8214,3892,7195,1141,4549];
+        charts['energyChart']=new Chart(ctx,{type:'bar',data:{labels:eData.map((_,i)=>i+1),datasets:[{data:eData,backgroundColor:'rgba(167,139,250,0.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:gridOpts,ticks:{maxTicksLimit:4},callback:v=>v/1000+'k'}}}});
+      }
+    }
+    if(!charts['maintChart']){
+      const ctx=document.getElementById('maintChart');
+      if(ctx) charts['maintChart']=new Chart(ctx,{type:'bar',data:{labels:['0-30d','31-60d','61-90d','91-120d','121-150d','151-180d'],datasets:[{data:[412,583,641,724,689,451],backgroundColor:['rgba(0,255,157,0.6)','rgba(0,212,255,0.6)','rgba(255,179,0,0.6)','rgba(255,107,53,0.6)','rgba(255,61,87,0.6)','rgba(200,20,50,0.7)'],borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:gridOpts,ticks:{maxTicksLimit:4}}}}});
+    }
+    if(!charts['corrosionChart']){
+      const ctx=document.getElementById('corrosionChart');
+      if(ctx){const cData=[2.32,1.67,1.61,1.97,0.18,0.97,2.13,1.86,2.30,1.25,0.81,2.04,1.68,0.66,1.89,0.38,0.54,1.23,0.82,1.77,1.86,1.57,0.60,2.36,0.91,0.76,1.92,2.11,0.35,1.69];
+      charts['corrosionChart']=new Chart(ctx,{type:'line',data:{labels:cData.map((_,i)=>i+1),datasets:[{data:cData,borderColor:'#f97316',borderWidth:1.5,backgroundColor:'rgba(249,115,22,0.1)',fill:true,tension:0.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:gridOpts,ticks:{maxTicksLimit:4}}}}});}
+    }
+    if(!charts['ageChart']){
+      const ctx=document.getElementById('ageChart');
+      if(ctx) charts['ageChart']=new Chart(ctx,{type:'bar',data:{labels:['1-5yr','6-10yr','11-15yr','16-20yr','21-25yr','26-30yr'],datasets:[{data:[280,540,820,910,1080,870],backgroundColor:'rgba(0,212,255,0.5)',borderColor:'#00d4ff',borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:gridOpts,ticks:{maxTicksLimit:4}}}}});
+    }
+  }
+  if(tab==='analytics'){
+    if(!charts['riskBoxChart']){
+      const ctx=document.getElementById('riskBoxChart');
+      if(ctx) charts['riskBoxChart']=new Chart(ctx,{type:'bar',data:{labels:['Gas Leak','Power Fail','Pipeline Deg','Comp Fail','Pressure Fail','No Outage'],datasets:[{label:'Avg Risk Score',data:[64.2,55.8,48.1,58.3,60.4,28.7],backgroundColor:['rgba(255,61,87,0.6)','rgba(255,179,0,0.6)','rgba(167,139,250,0.6)','rgba(249,115,22,0.6)','rgba(0,212,255,0.6)','rgba(0,255,157,0.6)'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:6}},y:{grid:gridOpts,min:0,max:100,ticks:{stepSize:20}}}}});
+    }
+    if(!charts['scatterPressure']){
+      const ctx=document.getElementById('scatterPressure');
+      if(ctx){
+        const pts=pressData.slice(0,40).map((p,i)=>({x:p,y:riskData[i]||50}));
+        charts['scatterPressure']=new Chart(ctx,{type:'scatter',data:{datasets:[{data:pts,backgroundColor:'rgba(0,212,255,0.5)',borderColor:'#00d4ff',borderWidth:1,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:gridOpts,title:{display:true,text:'Pressure (bar)',color:'#4a7a99'}},y:{grid:gridOpts,title:{display:true,text:'Risk Score',color:'#4a7a99'}}}}});
+      }
+    }
+    if(!charts['scatterVib']){
+      const ctx=document.getElementById('scatterVib');
+      if(ctx){
+        const pts=vibData.slice(0,40).map((v,i)=>({x:v,y:riskData[i]||50}));
+        charts['scatterVib']=new Chart(ctx,{type:'scatter',data:{datasets:[{data:pts,backgroundColor:'rgba(255,179,0,0.5)',borderColor:'#ffb300',borderWidth:1,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:gridOpts,title:{display:true,text:'Vibration (mm/s)',color:'#4a7a99'}},y:{grid:gridOpts,title:{display:true,text:'Risk Score',color:'#4a7a99'}}}}});
+      }
+    }
+    if(!charts['freqChart']){
+      const ctx=document.getElementById('freqChart');
+      if(ctx) charts['freqChart']=new Chart(ctx,{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],datasets:[{label:'Gas Leak',data:[112,98,134,108,142,119,125,131,97,143,128,122],borderColor:'#ff3d57',borderWidth:1.5,tension:0.4,pointRadius:2},{label:'Power Fail',data:[88,95,87,101,92,85,98,91,104,87,96,121],borderColor:'#ffb300',borderWidth:1.5,tension:0.4,pointRadius:2},{label:'No Outage',data:[42,38,31,45,28,37,40,35,44,38,41,18],borderColor:'#00ff9d',borderWidth:1.5,tension:0.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4a7a99',font:{size:9},boxWidth:10}}},scales:{x:{grid:{display:false}},y:{grid:gridOpts,ticks:{maxTicksLimit:5}}}}});
+    }
+  }
+  if(tab==='predictions'){
+    if(!charts['predScatterChart']){
+      const ctx=document.getElementById('predScatterChart');
+      if(ctx){
+        const actual=[65.7,66.2,53.2,75.2,58.2,32.0,41.6,40.9,75.0,46.5,50.2,42.4,81.1,40.2,45.6,76.0,87.2,43.8,56.3,73.4,59.3,71.8,52.3,77.6,35.1,49.6,84.4,75.5,63.2,73.2];
+        const pred=actual.map(v=>Math.max(0,Math.min(100,v+(Math.random()-0.5)*6)));
+        const pts=actual.map((v,i)=>({x:v,y:pred[i]}));
+        charts['predScatterChart']=new Chart(ctx,{type:'scatter',data:{datasets:[{data:pts,backgroundColor:'rgba(0,255,157,0.5)',borderColor:'#00ff9d',borderWidth:1,pointRadius:4},{data:[{x:0,y:0},{x:100,y:100}],type:'line',borderColor:'rgba(255,255,255,0.2)',borderDash:[4,4],pointRadius:0,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:gridOpts,min:0,max:100,title:{display:true,text:'Actual',color:'#4a7a99'}},y:{grid:gridOpts,min:0,max:100,title:{display:true,text:'Predicted',color:'#4a7a99'}}}}});
+      }
+    }
+    if(!charts['confChart']){
+      const ctx=document.getElementById('confChart');
+      if(ctx) charts['confChart']=new Chart(ctx,{type:'bar',data:{labels:['50-60%','60-70%','70-80%','80-90%','90-95%','95-99%','99-100%'],datasets:[{data:[120,280,410,680,890,1340,780],backgroundColor:['rgba(255,61,87,0.5)','rgba(255,107,53,0.5)','rgba(255,179,0,0.5)','rgba(0,212,255,0.5)','rgba(0,212,255,0.6)','rgba(0,255,157,0.6)','rgba(0,255,157,0.7)'],borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:gridOpts,ticks:{maxTicksLimit:4}}}}});
+    }
+  }
+  if(tab==='reports'){
+    if(!charts['reportChart']){
+      const ctx=document.getElementById('reportChart');
+      if(ctx) charts['reportChart']=new Chart(ctx,{type:'bar',data:{labels:['Gas Leak','Power Fail','Pipeline','Comp Fail','Pressure','No Outage'],datasets:[{label:'Events',data:[1259,1045,820,541,398,437],backgroundColor:['rgba(255,61,87,0.6)','rgba(255,179,0,0.6)','rgba(167,139,250,0.6)','rgba(249,115,22,0.6)','rgba(0,212,255,0.6)','rgba(0,255,157,0.6)'],borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:6,font:{size:9}}},y:{grid:gridOpts,ticks:{maxTicksLimit:4}}}}});
+    }
+  }
+}
+
+// Init overview charts on load
+initTabCharts('overview');
+
+// Export stubs
+function exportReport(){alert('PDF Report generation initiated.\nIn production this would generate a full PDF with all analytics.')}
+function exportCSV(){alert('CSV export initiated.\nIn production this would download the full 4,500 record dataset.')}
+</script>
+</body>
+</html>
