@@ -218,49 +218,96 @@ if predict_btn:
 # ==========================================================
 st.markdown("<br><br>",unsafe_allow_html=True)
 
-st.markdown("<div class='upload-title'>Upload Incidents to Smart AI Prediction of System Outage</div>",unsafe_allow_html=True)
+st.markdown(
+"<div class='upload-title'>Upload Incidents to Smart AI Prediction of System Outage</div>",
+unsafe_allow_html=True
+)
 
-file=st.file_uploader("Upload CSV",type=["csv"])
+file = st.file_uploader("Upload CSV", type=["csv"])
 
 if file:
 
-    df=pd.read_csv(file)
+    df = pd.read_csv(file)
 
-    status=st.empty()
-    status.markdown("<div class='status-text'>Smart AI predicting System Outage Severity and Type...</div>",unsafe_allow_html=True)
+    status = st.empty()
+
+    status.markdown(
+        "<div class='status-text'>Smart AI predicting System Outage Severity and Type...</div>",
+        unsafe_allow_html=True
+    )
 
     time.sleep(8)
 
-    scaled=scaler.transform(df)
+    scaled = scaler.transform(df)
 
-    df["Predicted_Risk_Score"]=risk_model.predict(scaled)
-    df["Severity_Class"]=severity_encoder.inverse_transform(severity_model.predict(scaled))
-    df["Outage_Type"]=outage_encoder.inverse_transform(outage_model.predict(scaled))
+    df["Predicted_Risk_Score"] = risk_model.predict(scaled)
+
+    df["Severity_Class"] = severity_encoder.inverse_transform(
+        severity_model.predict(scaled)
+    )
+
+    df["Outage_Type"] = outage_encoder.inverse_transform(
+        outage_model.predict(scaled)
+    )
+
+    # ======================================================
+    # COLOR FUNCTION
+    # ======================================================
 
     def color_severity(val):
 
-        val=str(val).upper()
+        val = str(val).upper()
 
-        if val=="HIGH":
+        if val == "HIGH":
             return "color:red"
-        if val=="MEDIUM":
+
+        elif val == "MEDIUM":
             return "color:orange"
-        if val=="LOW":
+
+        elif val == "LOW":
             return "color:#C9A000"
-        if val=="NORMAL":
+
+        elif val == "NORMAL":
             return "color:green"
 
         return ""
 
-    styled=df.style.applymap(color_severity,subset=["Severity_Class"])
+    # ======================================================
+    # FIX FOR PANDAS 3.X
+    # ======================================================
 
-    styled=styled.set_table_styles([
-        {'selector':'th','props':[('background-color','#E3F2FD'),('color','black')]}
+    styled = df.style.map(
+        color_severity,
+        subset=["Severity_Class"]
+    )
+
+    # Header Styling
+    styled = styled.set_table_styles([
+        {
+            'selector': 'th',
+            'props': [
+                ('background-color', '#E3F2FD'),
+                ('color', 'black'),
+                ('font-weight', 'bold')
+            ]
+        }
     ])
 
-    styled=styled.set_properties(
-        subset=["Predicted_Risk_Score","Severity_Class","Outage_Type"],
-        **{'background-color':'#E3F2FD'}
+    # Last 3 Prediction Columns
+    styled = styled.set_properties(
+        subset=[
+            "Predicted_Risk_Score",
+            "Severity_Class",
+            "Outage_Type"
+        ],
+        **{
+            'background-color': '#E3F2FD'
+        }
+    )
+
+    status.markdown(
+        "<div class='status-text'>AI Smart Predictions</div>",
+        unsafe_allow_html=True
     )
 
     st.write(styled)
